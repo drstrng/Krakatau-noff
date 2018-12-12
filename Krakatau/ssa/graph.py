@@ -67,7 +67,7 @@ class SSA_Graph(object):
         # Can't do a consistency check on entry as the graph may be in an inconsistent state at this point
         # Since the purpose of this function is to prune unreachable blocks from self.blocks
         sccs = graph_util.tarjanSCC([self.entryBlock], lambda block:block.jump.getSuccessors())
-        self.blocks = list(itertools.chain.from_iterable(map(reversed, sccs[::-1])))
+        self.blocks = list(itertools.chain.from_iterable(list(map(reversed, sccs[::-1]))))
 
         assert set(self.blocks) <= set(old)
         if len(self.blocks) < len(old):
@@ -132,7 +132,7 @@ class SSA_Graph(object):
                 ucs = block.unaryConstraints
                 ucs2 = block2.unaryConstraints
                 replace = {phi.rval: phi.get(fromkey) for phi in block2.phis}
-                for var2, var in replace.items():
+                for var2, var in list(replace.items()):
                     ucs[var] = constraints.join(ucs[var], ucs2.pop(var2))
                 ucs.update(ucs2)
 
@@ -154,7 +154,7 @@ class SSA_Graph(object):
 
     def disconnectConstantVariables(self):
         for block in self.blocks:
-            for var, uc in block.unaryConstraints.items():
+            for var, uc in list(block.unaryConstraints.items()):
                 if var.origin is not None:
                     newval = None
                     if var.type[0] == 'int':
@@ -177,7 +177,7 @@ class SSA_Graph(object):
             assert block.jump is not None
             for phi in block.phis:
                 assert phi.rval is None or phi.rval in block.unaryConstraints
-                for k,v in phi.dict.items():
+                for k,v in list(phi.dict.items()):
                     assert v in k[0].unaryConstraints
 
         keys = [block.key for block in self.blocks]
@@ -205,13 +205,13 @@ class SSA_Graph(object):
             for var in block.unaryConstraints:
                 v2b[var] = block
             for phi in block.phis:
-                assigns[phi.rval] = map(phi.get, block.predecessors)
+                assigns[phi.rval] = list(map(phi.get, block.predecessors))
 
         UCs = {}
         sccs = graph_util.tarjanSCC(assigns, lambda v:assigns.get(v, []))
         for scc in sccs:
             if all(var in assigns for var in scc):
-                invars = sum(map(assigns.get, scc), [])
+                invars = sum(list(map(assigns.get, scc)), [])
                 inputs = [UCs[invar] for invar in invars if invar in UCs]
                 assert inputs
                 uc = constraints.meet(*inputs)
@@ -238,7 +238,7 @@ class SSA_Graph(object):
             for block in self.blocks:
                 assert block in self.blocks
                 UCs = block.unaryConstraints
-                assert None not in UCs.values()
+                assert None not in list(UCs.values())
                 dirty = visit_counts[block] == 0
                 for phi in block.phis:
                     if phi in dirty_phis:
@@ -296,7 +296,7 @@ class SSA_Graph(object):
 
                 # now handle end of block
                 if isinstance(last_line, ssa_ops.ExceptionPhi):
-                    inputs = map(UCs.get, last_line.params)
+                    inputs = list(map(UCs.get, last_line.params))
                     out = constraints.meet(*inputs)
                     old = UCs[last_line.outException]
                     assert out is None or not out.null
@@ -312,7 +312,7 @@ class SSA_Graph(object):
                 if hasattr(block.jump, 'constrainJumps'):
                     assert block.jump.params
                     oldEdges = block.jump.getSuccessorPairs()
-                    inputs = map(UCs.get, block.jump.params)
+                    inputs = list(map(UCs.get, block.jump.params))
                     block.jump = block.jump.constrainJumps(*inputs)
                     # No exception case ordinarily won't be pruned, so we have to handle it explicitly
                     if must_throw and isinstance(block.jump, ssa_jumps.OnException):
@@ -447,7 +447,7 @@ class SSA_Graph(object):
         blockd, vard = {}, {}
         for oldb in region:
             block = blockd[oldb] = self._newBlockFrom(oldb)
-            block.unaryConstraints = {self._copyVar(k, vard):v for k, v in oldb.unaryConstraints.items()}
+            block.unaryConstraints = {self._copyVar(k, vard):v for k, v in list(oldb.unaryConstraints.items())}
             block.phis = [ssa_ops.Phi(block, vard[oldphi.rval]) for oldphi in oldb.phis]
 
             for op in oldb.lines:
@@ -476,7 +476,7 @@ class SSA_Graph(object):
                     block.predecessors.append(key)
 
         # fix up jump targets of newly created blocks
-        for oldb, block in blockd.items():
+        for oldb, block in list(blockd.items()):
             block.jump.replaceBlocks(blockd)
             for suc, t in block.jump.getSuccessorPairs():
                 suc.predecessors.append((block, t))
@@ -485,11 +485,11 @@ class SSA_Graph(object):
         for block in outsideBlocks:
             block.jump.replaceBlocks(blockd)
 
-        for old, new in vard.items():
+        for old, new in list(vard.items()):
             assert type(old.origin) == type(new.origin)
 
         # Fill in phi args in successors of new blocks
-        for oldb, block in blockd.items():
+        for oldb, block in list(blockd.items()):
             for oldc, t in oldb.jump.getSuccessorPairs():
                 child = blockd.get(oldc, oldc)
                 assert len(child.phis) == len(oldc.phis)
@@ -548,7 +548,7 @@ class SSA_Graph(object):
                     phi.add(key, svarcopy[var, key[0]])
 
         outreplace = {jv:rv for jv, rv in zip(jsrblock.jump.output.stack, retblock.jump.input.stack) if jv is not None}
-        outreplace.update({jv:retblock.jump.input.locals[i] for i, jv in jsrblock.jump.output.locals.items() if jv is not None})
+        outreplace.update({jv:retblock.jump.input.locals[i] for i, jv in list(jsrblock.jump.output.locals.items()) if jv is not None})
         for var in outreplace: # don't need jsrop's out vars anymore
             del jsrblock.unaryConstraints[var]
 
@@ -574,19 +574,19 @@ class SSA_Graph(object):
 
         self.procs = graph_util.topologicalSort(self.procs, parents.get)
         if any(parents.values()):
-            print 'Warning, nesting subprocedures detected! This method may take a long time to decompile.'
-        print 'Subprocedures for', self.code.method.name + ':', self.procs
+            print('Warning, nesting subprocedures detected! This method may take a long time to decompile.')
+        print('Subprocedures for', self.code.method.name + ':', self.procs)
 
         # now inline the procs
         while self.procs:
             proc = self.procs.pop()
             while len(proc.jsrblocks) > 1:
-                print 'splitting', proc
+                print('splitting', proc)
                 # push new subproc onto stack
                 self.procs.append(self._splitSubProc(proc))
                 assert self._conscheck() is None
             # When a subprocedure has only one call point, it can just be inlined instead of splitted
-            print 'inlining', proc
+            print('inlining', proc)
             self._inlineSubProc(proc)
             assert self._conscheck() is None
     ##########################################################################
@@ -602,7 +602,7 @@ class SSA_Graph(object):
             assert not isinstance(block.jump, (ssa_jumps.Return, ssa_jumps.Rethrow))
 
             new = self._newBlockFrom(block)
-            print 'Splitting', block, '->', new
+            print('Splitting', block, '->', new)
             # first fix up CFG edges
             badpreds = [t for t in block.predecessors if t[1]]
             new.predecessors = badpreds
@@ -651,8 +651,8 @@ class SSA_Graph(object):
                     head = entries[0]
                 else:
                     # if more than one entry point into the loop, we have to choose one as the head and duplicate the rest
-                    print 'Warning, multiple entry point loop detected. Generated code may be extremely large',
-                    print '({} entry points, {} blocks)'.format(len(entries), len(scc))
+                    print('Warning, multiple entry point loop detected. Generated code may be extremely large', end=' ')
+                    print('({} entry points, {} blocks)'.format(len(entries), len(scc)))
                     def loopSuccessors(head, block):
                         if block == head:
                             return []
@@ -664,9 +664,9 @@ class SSA_Graph(object):
 
                     head, reachable = min(reaches, key=lambda t:(len(t[1]), -len(t[0].predecessors)))
                     assert head not in reachable
-                    print 'Duplicating {} nodes'.format(len(reachable))
+                    print('Duplicating {} nodes'.format(len(reachable)))
                     blockd = self._duplicateBlocks(reachable, set(scc) - set(reachable))
-                    newtodo += map(blockd.get, reachable)
+                    newtodo += list(map(blockd.get, reachable))
                 newtodo.extend(scc)
                 newtodo.remove(head)
             todo = newtodo
@@ -726,7 +726,7 @@ def ssaFromVerified(code, iNodes, opts):
     for block in blocks:
         if isinstance(block.jump, subproc.ProcCallOp):
             procd[block.jump.target].jsrblocks.append(block)
-    parent.procs = sorted(procd.values(), key=lambda p:p.target.key)
+    parent.procs = sorted(list(procd.values()), key=lambda p:p.target.key)
 
     # Intern constraints to save a bit of memory for long methods
     def makeConstraint(var, _cache={}):

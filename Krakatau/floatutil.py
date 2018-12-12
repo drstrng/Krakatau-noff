@@ -13,7 +13,11 @@ ZERO = 1,ZERO_MAG
 NZERO = -1,ZERO_MAG
 
 # Key suitable for sorting finite (normalized) nonzero values
-sortkey = lambda (s,(m,e)):(s,s*e,s*m)
+def _fkey(s, me):
+    m, e = me
+    return (s,s*e,s*m)
+
+sortkey = _fkey
 
 # Size info for type - mantissa bits, min exponent, max exponent
 FLOAT_SIZE = 23,-126,127

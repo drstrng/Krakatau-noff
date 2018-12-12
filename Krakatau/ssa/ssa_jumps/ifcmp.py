@@ -44,7 +44,8 @@ class If(BaseJump):
                 impossible.append((child,False))
         return self.reduceSuccessors(impossible)
 
-    def getSuccessorConstraints(self, (block, t)):
+    def getSuccessorConstraints(self, xxx_todo_changeme):
+        (block, t) = xxx_todo_changeme
         assert t is False
         cmp_t = If.opposites[self.cmp] if block == self.successors[0] else self.cmp
 
