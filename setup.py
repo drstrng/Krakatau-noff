@@ -79,7 +79,7 @@ metadata = {
 
     # Metadata
     'name'              : 'Krakatau-noff',
-    'version'           : 'v0.2018-12-12',
+    'version'           : 'v0.20181212',
     'description'       : 'Analysis tools for Java .class files.',
     'long_description'  : long_description,
     'url'               : 'https://github.com/drstrng/Krakatau-noff',
