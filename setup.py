@@ -83,7 +83,7 @@ metadata = {
     'description'       : 'Analysis tools for Java .class files.',
     'long_description'  : long_description,
     'url'               : 'https://github.com/drstrng/Krakatau-noff',
-    'download_url'      : '??',
+    'download_url'      : 'https://github.com/drstrng/Krakatau-noff/archive/v0.20181212.tar.gz',
     'keywords'          : ['java', 'jvm', 'class', '.class', 'assembler', 'disassembler', 'decompiler'],
     }
 
