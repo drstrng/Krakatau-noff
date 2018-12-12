@@ -8,7 +8,7 @@ The assembler and disassembler support python 3; the decompiler does not.
 
 === Installation ===
 
-Using **pip**: **pip install Krakatau-noff**
+pip install Krakatau-noff
 
 === The original README follows... ===
 
