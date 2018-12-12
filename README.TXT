@@ -1,3 +1,17 @@
+=== What is this repo? ===
+
+This is a Not OFFicial (-noff) fork of Krakatau to enable pip installation.
+
+=== Python 3 note ===
+
+The assembler and disassembler support python 3; the decompiler does not.
+
+=== Installation ===
+
+Using **pip**: **pip install Krakatau-noff**
+
+=== The original README follows... ===
+
 Krakatau Bytecode Tools
 Copyright (C) 2012-18 Robert Grosse
 
